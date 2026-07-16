@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ABI | Travis' Dashboard</title>
+    <style>
+        :root {
+            --bg: #020408;
+            --panel: rgba(10, 15, 28, 0.85);
+            --panel2: rgba(13, 20, 38, 0.7);
+            --ink: #F0F4FF;
+            --muted: #6B7C97;
+            --brand: #7000FF;
+            --sep: rgba(255, 255, 255, 0.06);
+            --bar-bg: rgba(25, 33, 54, 0.8);
+            --green: #00FF9D;
+            --orange: #FF8A00;
+            --yellow: #FFE600;
+            --red: #FF3E3E;
+            --info: #00D1FF;
+            --tile-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+            --ring-size: 180px;
+        }
+
+        @keyframes pulse-ring {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 10px var(--glow-color));
+                opacity: 0.9;
+            }
+
+            50% {
+                filter: drop-shadow(0 0 25px var(--glow-color));
+                opacity: 1;
+            }
+        }
+
+        @keyframes breathe-bar {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px var(--bar-glow);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--bar-glow);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background 0.4s, color 0.4s;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: radial-gradient(circle at 10% 10%, rgba(112, 0, 255, 0.1) 0%, transparent 35%), var(--bg);
+            font: 15px/1.6 "Inter", sans-serif;
+            min-height: 100vh;
+        }
+
+        .wrap {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 50px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 32px;
+            border-radius: 20px;
+            background: var(--panel);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--sep);
+            box-shadow: var(--tile-shadow);
+            position: sticky;
+            top: 25px;
+            z-index: 1000;
+        }
+
+        .brand .title {
+            font-weight: 900;
+            letter-spacing: 2px;
+            font-size: 18px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #00D1FF 0%, #7000FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 12px rgba(112, 0, 255, 0.4));
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--sep);
+            border-radius: 24px;
+            padding: 35px;
+            box-shadow: var(--tile-shadow);
+        }
+
+        .card h2 {
+            margin: 0 0 30px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--muted);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card h2.centered {
+            justify-content: center;
+        }
+
+        .chip {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 100px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--sep);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .gauge {
+            width: var(--ring-size);
+            height: var(--ring-size);
+            position: relative;
+            display: grid;
+            place-items: center;
+            animation: pulse-ring 4s infinite ease-in-out;
+        }
+
+        .gauge__svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .gauge__track {
+            stroke: var(--bar-bg);
+            fill: none;
+        }
+
+        .gauge__arc {
+            fill: none;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.2s ease-out;
+        }
+
+        .gauge__center {
+            position: absolute;
+            font-size: 38px;
+            font-weight: 900;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 160px 1fr 65px;
+            gap: 20px;
+            align-items: center;
+            margin: 18px 0;
+        }
+
+        .bar {
+            height: 10px;
+            background: var(--bar-bg);
+            border-radius: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar i {
+            height: 100%;
+            border-radius: 50px;
+            display: block;
+            width: 0;
+            transition: width 1.2s ease-out;
+            animation: breathe-bar 5s infinite ease-in-out;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .tile {
+            background: var(--panel2);
+            border: 1px solid var(--sep);
+            border-radius: 20px;
+            padding: 35px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .tile-title {
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+        }
+
+        .job-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(112, 0, 255, 0.3);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(112, 0, 255, 0.1);
+        }
+
+        .job-big {
+            font-size: 54px;
+            font-weight: 900;
+            color: var(--brand);
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(112, 0, 255, 0.6);
+        }
+
+        .job-sub {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--brand);
+            text-shadow: 0 0 15px rgba(112, 0, 255, 0.5);
+        }
+
+        .list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .list li {
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--sep);
+            padding: 14px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .list li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--orange);
+            border-radius: 50%;
+            margin-right: 12px;
+            box-shadow: 0 0 8px var(--orange);
+        }
+
+        .btn {
+            background: var(--panel2);
+            border: 1px solid var(--sep);
+            padding: 10px 18px;
+            border-radius: 12px;
+            color: var(--ink);
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background: var(--brand);
+            box-shadow: 0 0 20px rgba(112, 0, 255, 0.4);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .w10-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .w10-centered-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .w10-eol-text {
+            font-size: 14px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .w10-eol-text strong {
+            color: var(--ink);
+        }
+
+        footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 10px;
+            margin-top: 20px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        #src {
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <div class="brand"><span class="title">ABI | Travis' Dashboard</span></div>
+            <div style="display:flex; gap:12px;">
+                <button id="btnLoad" class="btn">Import</button>
+                <input id="file" type="file" accept=".txt" hidden />
+            </div>
+        </header>
+
+        <div id="dz"
+            style="border: 2px dashed var(--sep); border-radius: 24px; padding: 80px; text-align: center; color: var(--muted); cursor: pointer;">
+            DROP STATUS.TXT TO INITIALIZE
+        </div>
+
+        <section id="summaryCard" class="card hidden">
+            <div class="summary-grid">
+                <div class="tile">
+                    <div class="tile-title">Patching Overall</div>
+                    <div class="gauge">
+                        <svg class="gauge__svg" viewBox="0 0 100 100">
+                            <circle class="gauge__track" cx="50" cy="50" r="45" stroke-width="8"></circle>
+                            <circle id="ringPatchArc" class="gauge__arc" cx="50" cy="50" r="45" stroke-width="10"
+                                stroke-dasharray="283" stroke-dashoffset="283"></circle>
+                        </svg>
+                        <div class="gauge__center"><span id="ringPatchVal">—</span></div>
+                    </div>
+                </div>
+                <div class="tile">
+                    <div class="tile-title">Backups Overall</div>
+                    <div class="gauge">
+                        <svg class="gauge__svg" viewBox="0 0 100 100">
+                            <circle class="gauge__track" cx="50" cy="50" r="45" stroke-width="8"></circle>
+                            <circle id="ringBackupArc" class="gauge__arc" cx="50" cy="50" r="45" stroke-width="10"
+                                stroke-dasharray="283" stroke-dashoffset="283"></circle>
+                        </svg>
+                        <div class="gauge__center"><span id="ringBackupVal">—</span></div>
+                    </div>
+                </div>
+                <div class="tile">
+                    <div class="tile-title">Windows 10 Devices Remaining</div>
+                    <div
+                        style="flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+                        <div id="win10Big"
+                            style="font-size: 72px; font-weight: 900; transition: color 0.5s, text-shadow 0.5s;">—</div>
+                        <span id="win10Status" class="chip">—</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="detailsRow" class="grid-2 hidden">
+            <section class="card">
+                <h2>Patching Details <span id="titleTarget" style="display:none; font-weight:400;">(Target: <span
+                            id="valTarget"></span>)</span> <span id="patchStatus" class="chip"
+                        style="margin-left:auto;">—</span></h2>
+                <div class="row">
+                    <div class="label">Overall</div>
+                    <div class="bar" id="barPatchOverall"><i></i></div>
+                    <div class="val" id="valPatchOverall" style="font-weight:800; text-align:right;">—</div>
+                </div>
+                <div class="row">
+                    <div class="label">Workstations</div>
+                    <div class="bar" id="barPatchWS"><i></i></div>
+                    <div class="val" id="valPatchWS" style="font-weight:800; text-align:right;">—</div>
+                </div>
+                <div class="row">
+                    <div class="label">Servers</div>
+                    <div class="bar" id="barPatchSV"><i></i></div>
+                    <div class="val" id="valPatchSV" style="font-weight:800; text-align:right;">—</div>
+                </div>
+
+                <div class="job-box" id="jobBox" hidden>
+                    <div
+                        style="font-size:10px; letter-spacing:2px; color: var(--brand); font-weight:900; margin-bottom:10px; text-shadow: 0 0 10px rgba(112,0,255,0.4);">
+                        JOB ACTIVITY</div>
+                    <div class="job-big" id="jobPending">—</div>
+                    <div style="font-size:10px; color: var(--muted); letter-spacing:1px; margin-bottom:15px;">PENDING
+                    </div>
+                    <div
+                        style="display:grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--sep); padding-top:15px;">
+                        <div>
+                            <div id="jobRunning" class="job-sub">—</div>
+                            <div style="font-size:9px; color:var(--muted)">RUNNING</div>
+                        </div>
+                        <div>
+                            <div id="jobDaytime" class="job-sub">—</div>
+                            <div style="font-size:9px; color:var(--muted)">DAYTIME</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Backup Details <span id="backupStatus" class="chip" style="margin-left:auto;">—</span></h2>
+                <div class="row">
+                    <div class="label">Overall</div>
+                    <div class="bar" id="barBackupOverall"><i></i></div>
+                    <div class="val" id="valBackupOverall" style="font-weight:800; text-align:right;">—</div>
+                </div>
+                <div style="margin-top:30px;">
+                    <div
+                        style="font-size:10px; margin-bottom:15px; text-transform:uppercase; letter-spacing:1px; font-weight:800; color:var(--muted);">
+                        Attention Required: <span id="troubledCount" style="color:var(--orange)">0</span></div>
+                    <ul id="troubledList" class="list"></ul>
+                    <div id="troubledEmpty"
+                        style="color:var(--muted); font-size:13px; text-align:center; padding: 20px;" hidden>Everything
+                        is perfect, nothing to see here, move along.</div>
+                </div>
+            </section>
+        </div>
+
+        <div id="notesRow" class="grid-2 hidden">
+            <section class="card">
+                <h2>Patching Notes</h2>
+                <div id="patchNotes" style="font-size:14px;"></div>
+            </section>
+            <section class="card">
+                <h2>Backup Notes</h2>
+                <div id="backupNotes" style="font-size:14px;"></div>
+            </section>
+        </div>
+
+        <section id="win10Detail" class="card hidden">
+            <h2 class="centered">Windows 10 Device Details</h2>
+            <div class="w10-metrics">
+                <div id="w10Rem"
+                    style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; text-align: center;">
+                </div>
+                <div id="w10Prev"
+                    style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; text-align: center;">
+                </div>
+            </div>
+
+            <div class="w10-centered-stack">
+                <div id="w10Delta"
+                    style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; min-width: 250px; text-align: center;">
+                </div>
+                <div id="w10Eol" class="w10-eol-text"></div>
+            </div>
+        </section>
+
+        <footer class="hidden" id="footer">
+            <span id="src"></span>
+            <span>© Travis Meyer  | 2025</span>
+        </footer>
+    </div>
+
+    <script>
+        const qs = s => document.querySelector(s);
+        const clamp = n => Math.max(0, Math.min(100, n | 0));
+
+        function getStatusLabel(pct, target = 95) {
+            if (pct >= target) return { text: 'OK', color: 'var(--green)' };
+            if (pct >= target - 10) return { text: 'Warn', color: 'var(--orange)' };
+            return { text: 'Alert', color: 'var(--red)' };
+        }
+
+        function paintBar(el, pct, color) {
+            const i = el.querySelector('i');
+            i.style.width = pct + '%'; i.style.background = color; i.style.setProperty('--bar-glow', color);
+        }
+
+        function paintRing(arc, pct, color) {
+            const C = 283; arc.style.stroke = color;
+            arc.closest('.gauge').style.setProperty('--glow-color', color);
+            arc.style.strokeDashoffset = C * (1 - (pct / 100));
+        }
+
+        function parseKV(text) {
+            const obj = {}; const lines = text.split(/\r?\n/);
+            for (let i = 0; i < lines.length; i++) {
+                let m = lines[i].match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/);
+                if (m) { obj[m[1]] = m[2]; continue; }
+                m = lines[i].match(/^\s*([A-Za-z0-9_]+)\s*<<\s*([A-Za-z0-9_]+)\s*$/);
+                if (m) {
+                    const key = m[1], delim = m[2], buf = [];
+                    while (++i < lines.length && lines[i].trim() !== delim) buf.push(lines[i]);
+                    obj[key] = buf.join('<br>').trim();
+                }
+            }
+            return obj;
+        }
+
+        function render(text, label = 'manual input') {
+            const kv = parseKV(text);
+            const pOverall = clamp(kv.PatchOverall || 0);
+            const pTarget = Number(kv.PatchTargetPercentage) || 95;
+            const pStat = getStatusLabel(pOverall, pTarget);
+
+            qs('#src').textContent = 'Source: ' + label;
+
+            qs('#ringPatchVal').textContent = pOverall + '%';
+            paintRing(qs('#ringPatchArc'), pOverall, pStat.color);
+            qs('#patchStatus').textContent = pStat.text;
+            qs('#patchStatus').style.color = pStat.color;
+            qs('#valTarget').textContent = pTarget + '%';
+            qs('#titleTarget').style.display = 'inline';
+
+            paintBar(qs('#barPatchOverall'), pOverall, pStat.color);
+            qs('#valPatchOverall').textContent = pOverall + '%';
+            paintBar(qs('#barPatchWS'), clamp(kv.PatchWorkstations), getStatusLabel(kv.PatchWorkstations, pTarget).color);
+            qs('#valPatchWS').textContent = (kv.PatchWorkstations || 0) + '%';
+            paintBar(qs('#barPatchSV'), clamp(kv.PatchServers), getStatusLabel(kv.PatchServers, pTarget).color);
+            qs('#valPatchSV').textContent = (kv.PatchServers || 0) + '%';
+
+            if (kv.PatchJobPending) {
+                qs('#jobBox').hidden = false;
+                qs('#jobPending').textContent = kv.PatchJobPending;
+                qs('#jobRunning').textContent = kv.PatchJobRunning || '0';
+                qs('#jobDaytime').textContent = kv.PatchJobDaytime || '0';
+            }
+
+            const bOverall = clamp(kv.BackupOverall || 0);
+            const bStat = getStatusLabel(bOverall, 100);
+            qs('#ringBackupVal').textContent = bOverall + '%';
+            paintRing(qs('#ringBackupArc'), bOverall, bStat.color);
+            qs('#backupStatus').textContent = bStat.text;
+            qs('#backupStatus').style.color = bStat.color;
+            paintBar(qs('#barBackupOverall'), bOverall, bStat.color);
+            qs('#valBackupOverall').textContent = bOverall + '%';
+
+            const list = qs('#troubledList'); list.innerHTML = '';
+            const clients = (kv.TroubledClients || '').split(',').filter(Boolean);
+            if (clients.length) {
+                qs('#troubledCount').textContent = clients.length;
+                qs('#troubledEmpty').hidden = true;
+                clients.forEach(c => { const li = document.createElement('li'); li.textContent = c.trim(); list.appendChild(li); });
+            } else {
+                qs('#troubledCount').textContent = '0';
+                qs('#troubledEmpty').hidden = false;
+            }
+
+            const w10 = Number(kv.Windows10Remaining);
+            if (!isNaN(w10)) {
+                let w10Color = 'var(--red)';
+                let w10Text = 'Alert';
+
+                if (w10 === 0) {
+                    w10Color = 'var(--green)';
+                    w10Text = 'Ok';
+                } else if (w10 >= 1 && w10 < 25) {
+                    w10Color = 'var(--orange)';
+                    w10Text = 'Almost';
+                } else if (w10 >= 25 && w10 <= 50) {
+                    w10Color = 'var(--yellow)';
+                    w10Text = 'Warn';
+                }
+
+                const bigNum = qs('#win10Big');
+                const bigStat = qs('#win10Status');
+
+                bigNum.textContent = w10;
+                bigNum.style.color = w10Color;
+                bigNum.style.textShadow = `0 0 40px ${w10Color}`;
+
+                bigStat.textContent = w10Text;
+                bigStat.style.color = w10Color;
+                bigStat.style.borderColor = w10Color;
+
+                qs('#w10Rem').innerHTML = `<div style="color:var(--muted); font-size:10px;">WORKSTATIONS REMAINING</div><div style="font-size:18px; font-weight:800; color:${w10Color}">${w10}</div>`;
+
+                if (kv.Windows10LastMonth) {
+                    const last = Number(kv.Windows10LastMonth);
+                    const diff = last - w10;
+                    const diffColor = diff >= 0 ? 'var(--green)' : 'var(--red)';
+                    const labelStr = diff >= 0 ? 'Down' : 'Up';
+                    qs('#w10Prev').innerHTML = `<div style="color:var(--muted); font-size:10px;">LAST MONTH</div><div style="font-size:18px; font-weight:800;">${last}</div>`;
+                    qs('#w10Delta').innerHTML = `<div style="color:var(--muted); font-size:10px;">CHANGE</div><div style="font-size:18px; font-weight:800; color:${diffColor}">${labelStr} ${Math.abs(diff)}</div>`;
+                }
+                if (kv.Windows10EOLDate) {
+                    const days = Math.floor((new Date() - new Date(kv.Windows10EOLDate)) / 86400000);
+                    qs('#w10Eol').innerHTML = `EOL was <strong>${days}</strong> days ago`;
+                }
+            }
+
+            const noNotes = 'No notes provided';
+            qs('#patchNotes').innerHTML = kv.PatchingNotes || noNotes;
+            qs('#backupNotes').innerHTML = kv.BackupNotes || noNotes;
+
+            qs('#dz').classList.add('hidden');
+            qs('#summaryCard').classList.remove('hidden');
+            qs('#detailsRow').classList.remove('hidden');
+            qs('#notesRow').classList.remove('hidden');
+            qs('#win10Detail').classList.remove('hidden');
+            qs('#footer').classList.remove('hidden');
+        }
+
+        document.getElementById('btnLoad').addEventListener('click', () => document.getElementById('file').click());
+        document.getElementById('file').addEventListener('change', async e => {
+            const f = e.target.files[0]; if (f) render(await f.text(), f.name);
+        });
+    </script>
+</body>
+
+</html>
