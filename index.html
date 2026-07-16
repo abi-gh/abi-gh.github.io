@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
+    <meta name="color-scheme" content="light dark">
     <link href="https://fonts.googleapis.com/css?family=Raleway:100,200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
 
     <title>ABI - Remote Access Portal</title>
@@ -22,6 +23,16 @@
 
     <link rel="stylesheet" href="assets/css/lightbox.css">
 
+    <!-- Set theme before first paint to avoid a light/dark flash -->
+    <script>
+        (function () {
+            var stored = localStorage.getItem('abi-theme');
+            var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var theme = stored || (systemDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
     </head>
     
     <body>
@@ -35,6 +46,12 @@
         </div>
     </div>  
     <!-- ***** Preloader End ***** -->
+
+    <!-- ***** Theme Toggle ***** -->
+    <button id="theme-toggle" type="button" aria-label="Toggle light and dark mode" title="Toggle light / dark mode">
+        <i class="fa fa-moon-o" aria-hidden="true"></i>
+        <i class="fa fa-sun-o" aria-hidden="true"></i>
+    </button>
     
     
     <!-- ***** Header Area Start ***** -->
@@ -178,6 +195,33 @@
             });
         });
 
+    </script>
+
+    <!-- Theme toggle behavior -->
+    <script>
+        (function () {
+            var root = document.documentElement;
+            var toggleBtn = document.getElementById('theme-toggle');
+            var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+            function applyTheme(theme) {
+                root.setAttribute('data-theme', theme);
+            }
+
+            toggleBtn.addEventListener('click', function () {
+                var current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                var next = current === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                localStorage.setItem('abi-theme', next);
+            });
+
+            // If the user hasn't manually chosen a theme, keep following the system setting live
+            mediaQuery.addEventListener('change', function (e) {
+                if (!localStorage.getItem('abi-theme')) {
+                    applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        })();
     </script>
 
   </body>
