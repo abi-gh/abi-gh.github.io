@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Array Capacity Calculator — RAID &amp; ZFS</title>
 <meta name="description" content="A self-contained RAID and ZFS array capacity calculator. Compute usable storage, overhead, and fault tolerance for any array layout.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230a0e14'/%3E%3Crect x='20' y='24' width='60' height='14' rx='3' fill='%2322d3ee'/%3E%3Crect x='20' y='43' width='60' height='14' rx='3' fill='%23a78bfa'/%3E%3Crect x='20' y='62' width='60' height='14' rx='3' fill='%2334d399'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16.png">
+<link rel="icon" href="assets/images/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/favicon-180.png">
+<meta name="theme-color" content="#0a0e14">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -26,6 +31,7 @@
     --accent-purple:#a78bfa;
     --accent-green:#34d399;
     --accent-red:#fb7185;
+    --accent-amber:#f59e0b;
     --font-display:'Space Grotesk', 'Inter', sans-serif;
     --font-body:'Inter', sans-serif;
     --font-mono:'JetBrains Mono', monospace;
@@ -440,6 +446,15 @@
   .disk-cell.parity{ background:var(--accent-purple); }
   .disk-cell.mirror{ background:var(--accent-purple); animation:pulseSync 2.4s ease-in-out infinite; }
   .disk-cell.spare{ background:var(--border-strong); }
+  .disk-cell.spare-hot{
+    background:transparent;
+    border:2px dashed var(--accent-amber);
+  }
+  .vdev-group.spare-group{
+    border-style:dashed;
+    border-color:rgba(245,158,11,0.4);
+    background:rgba(245,158,11,0.04);
+  }
 
   @keyframes pulseSync{
     0%,100%{ opacity:1; }
@@ -517,6 +532,13 @@
         </select>
       </div>
     </div>
+    <p class="field-hint">Only count drives that are actually part of the array here. Standby drives go in Hot Spares below.</p>
+
+    <div class="field">
+      <label class="field-label" for="hotSpareCount">Hot Spare Drives <span style="text-transform:none; font-weight:400; color:var(--text-muted);">(optional)</span></label>
+      <input type="number" id="hotSpareCount" min="0" max="50" step="1" placeholder="0">
+      <p class="field-hint">Hot spares sit outside the array on standby and add zero usable capacity — they just swap in automatically after a drive fails. <strong style="color:var(--text-secondary);">Example:</strong> a 3-drive RAID 1 with one spare = <strong style="color:var(--text-secondary);">2</strong> in "Number of Drives" above, <strong style="color:var(--text-secondary);">1</strong> here.</p>
+    </div>
 
     <hr class="divider">
 
@@ -592,6 +614,10 @@
             <div class="stat-label">Filesystem Overhead</div>
             <div class="stat-value" id="fsOverheadStat">—</div>
           </div>
+          <div class="stat-card" style="grid-column:1/-1;">
+            <div class="stat-label">Total Physical Drives (Array + Spares)</div>
+            <div class="stat-value" id="totalDrives">—</div>
+          </div>
         </div>
 
         <div class="field-label" style="margin-bottom:6px;">Storage Efficiency</div>
@@ -611,6 +637,7 @@
         <div class="legend">
           <span class="legend-item"><span class="legend-swatch" style="background:var(--accent-cyan);"></span>Data</span>
           <span class="legend-item"><span class="legend-swatch" style="background:var(--accent-purple);"></span>Parity / Mirror</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:transparent; border:2px dashed var(--accent-amber);"></span>Hot Spare</span>
         </div>
       </div>
       <div id="vizBody"></div>
@@ -774,6 +801,7 @@
   const driveCountEl = el("driveCount");
   const driveCapacityEl = el("driveCapacity");
   const capacityUnitEl = el("capacityUnit");
+  const hotSpareCountEl = el("hotSpareCount");
   const groupFieldEl = el("groupField");
   const groupCountEl = el("groupCount");
   const filesystemEl = el("filesystem");
@@ -918,12 +946,23 @@
     el("efficiencyLabel").textContent = `${efficiency.toFixed(1)}% of raw capacity is usable after redundancy and filesystem overhead.`;
 
     const faultInfo = level.fault(n, g);
-    el("faultText").textContent = faultInfo.text;
+    let faultText = faultInfo.text;
+    const spares = Math.max(0, parseInt(hotSpareCountEl.value, 10) || 0);
+    if(spares > 0 && faultInfo.level !== "none"){
+      faultText += ` Plus ${spares} hot spare${spares > 1 ? "s" : ""} on standby to auto-rebuild after a failure.`;
+    } else if(spares > 0){
+      faultText += ` ${spares} hot spare${spares > 1 ? "s" : ""} standing by, but this layout still can't survive a failure on its own.`;
+    }
+    el("faultText").textContent = faultText;
     const badge = el("faultBadge");
     badge.classList.remove("level-none","level-medium","level-high");
     badge.classList.add(`level-${faultInfo.level}`);
 
-    renderVisualizer(level, n, g);
+    const totalPhysicalDrives = n + spares;
+    const totalPhysicalBytes = totalPhysicalDrives * capBytes;
+    el("totalDrives").textContent = `${totalPhysicalDrives} drives (${n} array + ${spares} spare${spares === 1 ? "" : "s"}) — ${formatBytes(totalPhysicalBytes, binary)} purchased`;
+
+    renderVisualizer(level, n, g, spares);
   }
 
   /* ============================================================
@@ -935,10 +974,33 @@
     return d;
   }
 
-  function renderVisualizer(level, n, g){
+  function renderSparesGroup(body, spares){
+    if(spares <= 0) return;
+    const group = document.createElement("div");
+    group.className = "vdev-group spare-group";
+    const label = document.createElement("div");
+    label.className = "vdev-label";
+    label.textContent = `Hot Spares — ${spares} drive${spares > 1 ? "s" : ""} on standby, not part of the array`;
+    group.appendChild(label);
+    const row = document.createElement("div");
+    row.className = "disk-row";
+    const shown = Math.min(spares, 24);
+    for(let i=0;i<shown;i++) row.appendChild(makeCell("spare-hot"));
+    group.appendChild(row);
+    if(spares > shown){
+      const more = document.createElement("div");
+      more.className = "more-note";
+      more.textContent = `+ ${spares - shown} more spares`;
+      group.appendChild(more);
+    }
+    body.appendChild(group);
+  }
+
+  function renderVisualizer(level, n, g, spares){
     const body = el("vizBody");
     const caption = el("vizCaption");
     body.innerHTML = "";
+    spares = spares || 0;
 
     const MAX_CELLS = 240;
 
@@ -962,6 +1024,7 @@
         group.appendChild(more);
       }
       body.appendChild(group);
+      renderSparesGroup(body, spares);
       caption.textContent = "Every drive holds an identical full copy of the data — shown pulsing in sync.";
       return;
     }
@@ -989,6 +1052,7 @@
         more.textContent = `+ ${g - groupsToShow} more mirror vdevs, striped identically`;
         body.appendChild(more);
       }
+      renderSparesGroup(body, spares);
       caption.textContent = "Each box is one mirror vdev (drives shown pulsing = identical copies). Data is then striped evenly across every vdev for performance.";
       return;
     }
@@ -1035,6 +1099,7 @@
         more.textContent = `+ ${groups - groupsToShow} more identical groups`;
         body.appendChild(more);
       }
+      renderSparesGroup(body, spares);
       caption.textContent = "Purple cells are parity, cyan cells are data. Parity rotates across drives each stripe row so no single drive is a bottleneck — a simplified illustration; exact ordering varies by controller/implementation.";
       return;
     }
@@ -1065,6 +1130,7 @@
       group.appendChild(more);
     }
     body.appendChild(group);
+    renderSparesGroup(body, spares);
     caption.textContent = "All drives carry data with no redundancy — losing one drive affects the whole array.";
   }
 
@@ -1077,7 +1143,7 @@
     recalc();
   });
 
-  [driveCountEl, driveCapacityEl, capacityUnitEl, filesystemEl, unitDisplayEl].forEach(input => {
+  [driveCountEl, driveCapacityEl, capacityUnitEl, hotSpareCountEl, filesystemEl, unitDisplayEl].forEach(input => {
     input.addEventListener("input", recalc);
     input.addEventListener("change", recalc);
   });
