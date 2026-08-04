@@ -32,6 +32,8 @@
     --accent-green:#34d399;
     --accent-red:#fb7185;
     --accent-amber:#f59e0b;
+    --accent-orange:#fb923c;
+    --accent-orange-dark:#c2560f;
     --font-display:'Space Grotesk', 'Inter', sans-serif;
     --font-body:'Inter', sans-serif;
     --font-mono:'JetBrains Mono', monospace;
@@ -471,12 +473,17 @@
     flex-shrink:0;
   }
   .disk-cell.data{ background:var(--accent-cyan); }
-  .disk-cell.parity{ background:var(--accent-purple); }
-  .disk-cell.mirror{ background:var(--accent-purple); animation:pulseSync 2.4s ease-in-out infinite; }
+  .disk-cell.parity{
+    background:repeating-linear-gradient(45deg, var(--accent-orange), var(--accent-orange) 4px, var(--accent-orange-dark) 4px, var(--accent-orange-dark) 8px);
+  }
+  .disk-cell.mirror{
+    background:repeating-linear-gradient(45deg, var(--accent-orange), var(--accent-orange) 4px, var(--accent-orange-dark) 4px, var(--accent-orange-dark) 8px);
+    animation:pulseSync 2.4s ease-in-out infinite;
+  }
   .disk-cell.spare{ background:var(--border-strong); }
   .disk-cell.spare-hot{
     background:transparent;
-    border:2px dashed var(--accent-amber);
+    border:2px dashed var(--text-secondary);
   }
   .vdev-group.spare-group{
     border-style:dashed;
@@ -672,8 +679,8 @@
         <h2 class="panel-title" id="viz-title" style="margin-bottom:0;"><span class="idx">03</span> Array Visualizer</h2>
         <div class="legend">
           <span class="legend-item"><span class="legend-swatch" style="background:var(--accent-cyan);"></span>Data</span>
-          <span class="legend-item"><span class="legend-swatch" style="background:var(--accent-purple);"></span>Parity / Mirror</span>
-          <span class="legend-item"><span class="legend-swatch" style="background:transparent; border:2px dashed var(--accent-amber);"></span>Hot Spare</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:repeating-linear-gradient(45deg, var(--accent-orange), var(--accent-orange) 3px, var(--accent-orange-dark) 3px, var(--accent-orange-dark) 6px);"></span>Parity / Mirror</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:transparent; border:2px dashed var(--text-secondary);"></span>Hot Spare</span>
         </div>
       </div>
       <div id="vizBody"></div>
@@ -1137,7 +1144,7 @@
         body.appendChild(more);
       }
       renderSparesGroup(body, spares);
-      caption.textContent = "Purple cells are parity, cyan cells are data. Parity rotates across drives each stripe row so no single drive is a bottleneck — a simplified illustration; exact ordering varies by controller/implementation.";
+      caption.textContent = "Striped orange cells are parity, cyan cells are data — parity rotates across drives each stripe row so no single drive is a bottleneck. A simplified illustration; exact ordering varies by controller/implementation.";
       return;
     }
 
