@@ -187,6 +187,34 @@
     margin:0 0 20px;
   }
 
+  .panel-header-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+  }
+  .reset-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+    background:var(--bg-inset);
+    border:1px solid var(--border-strong);
+    color:var(--text-secondary);
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:12.5px;
+    padding:8px 13px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .reset-btn svg{ width:14px; height:14px; transition:transform .3s ease; }
+  .reset-btn:hover{ border-color:var(--accent-red); color:var(--accent-red); }
+  .reset-btn:hover svg{ transform:rotate(-70deg); }
+  .reset-btn:active svg{ transform:rotate(-360deg); }
+
   hr.divider{
     border:none;
     border-top:1px solid var(--border-subtle);
@@ -512,8 +540,16 @@
 
   <!-- ============ CONFIG PANEL ============ -->
   <section class="panel" aria-labelledby="config-title">
-    <h2 class="panel-title" id="config-title"><span class="idx">01</span> Configure Array</h2>
-    <p class="panel-sub">Enter your drives, then choose a layout.</p>
+    <div class="panel-header-row">
+      <div>
+        <h2 class="panel-title" id="config-title"><span class="idx">01</span> Configure Array</h2>
+        <p class="panel-sub">Enter your drives, then choose a layout.</p>
+      </div>
+      <button type="button" id="resetBtn" class="reset-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+        Reset
+      </button>
+    </div>
 
     <div class="row">
       <div class="field">
@@ -811,6 +847,7 @@
   const fsHintEl = el("fsHint");
   const errorBannerEl = el("errorBanner");
   const resultsBodyEl = el("resultsBody");
+  const resetBtnEl = el("resetBtn");
 
   /* ============================================================
      Formatting helpers
@@ -1151,6 +1188,22 @@
   groupCountEl.addEventListener("input", () => {
     groupCountEl.dataset.touched = "1";
     recalc();
+  });
+
+  resetBtnEl.addEventListener("click", () => {
+    driveCountEl.value = "";
+    driveCapacityEl.value = "";
+    capacityUnitEl.value = "TB";
+    hotSpareCountEl.value = "";
+    groupCountEl.value = "2";
+    delete groupCountEl.dataset.touched;
+    filesystemEl.value = "ntfs";
+    unitDisplayEl.value = "decimal";
+    state.levelKey = "raid5";
+    populateRaidSelect();
+    updateLevelUI();
+    recalc();
+    driveCountEl.focus();
   });
 
   /* ============================================================
