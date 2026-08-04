@@ -201,7 +201,7 @@
     gap:6px;
     flex-shrink:0;
     background:var(--bg-inset);
-    border:1px solid var(--border-strong);
+    border:1px solid rgba(34,211,238,0.45);
     color:var(--text-secondary);
     font-family:var(--font-body);
     font-weight:600;
@@ -209,13 +209,28 @@
     padding:8px 13px;
     border-radius:999px;
     cursor:pointer;
-    transition:all .15s ease;
+    transition:border-color .2s ease, color .2s ease, background .2s ease, box-shadow .2s ease;
     white-space:nowrap;
+    animation:resetIdleGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes resetIdleGlow{
+    0%,100%{ box-shadow:0 0 8px rgba(34,211,238,0.18); }
+    50%{ box-shadow:0 0 16px rgba(34,211,238,0.4); }
   }
   .reset-btn svg{ width:14px; height:14px; transition:transform .3s ease; }
-  .reset-btn:hover{ border-color:var(--accent-red); color:var(--accent-red); }
+  .reset-btn:hover, .reset-btn:focus-visible{
+    animation-play-state:paused;
+    border-color:var(--accent-red);
+    color:var(--accent-red);
+    background:rgba(251,113,133,0.08);
+    box-shadow:0 0 0 4px rgba(251,113,133,0.14), 0 0 18px rgba(251,113,133,0.45);
+  }
   .reset-btn:hover svg{ transform:rotate(-70deg); }
   .reset-btn:active svg{ transform:rotate(-360deg); }
+
+  @media (prefers-reduced-motion: reduce){
+    .reset-btn{ animation:none; box-shadow:0 0 10px rgba(34,211,238,0.25); }
+  }
 
   hr.divider{
     border:none;
@@ -580,7 +595,8 @@
     <div class="field">
       <label class="field-label" for="hotSpareCount">Hot Spare Drives <span style="text-transform:none; font-weight:400; color:var(--text-muted);">(optional)</span></label>
       <input type="number" id="hotSpareCount" min="0" max="50" step="1" placeholder="0">
-      <p class="field-hint">Hot spares sit outside the array on standby and add zero usable capacity — they just swap in automatically after a drive fails. <strong style="color:var(--text-secondary);">Example:</strong> a 3-drive RAID 1 with one spare = <strong style="color:var(--text-secondary);">2</strong> in "Number of Drives" above, <strong style="color:var(--text-secondary);">1</strong> here.</p>
+      <p class="field-hint">Hot spares sit outside the array on standby and add zero usable capacity — they just swap in automatically after a drive fails.</p>
+      <p class="field-hint" style="margin-top:8px;"><strong style="color:var(--text-secondary);">Example:</strong> a 3-drive RAID 1 with one spare = <strong style="color:var(--text-secondary);">2</strong> in "Number of Drives" above, <strong style="color:var(--text-secondary);">1</strong> here.</p>
     </div>
 
     <hr class="divider">
@@ -1228,6 +1244,8 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let particles = [];
   let w, h;
+  const mouse = { x: null, y: null };
+  const MOUSE_RADIUS = 160;
 
   function resize(){
     w = canvas.width = window.innerWidth;
@@ -1256,6 +1274,18 @@
     for(const p of particles){
       p.x += p.speedX;
       p.y += p.speedY;
+
+      if(mouse.x !== null){
+        const mdx = p.x - mouse.x;
+        const mdy = p.y - mouse.y;
+        const mdist = Math.sqrt(mdx*mdx + mdy*mdy);
+        if(mdist < MOUSE_RADIUS && mdist > 0.01){
+          const push = (1 - mdist/MOUSE_RADIUS) * 1.8;
+          p.x += (mdx/mdist) * push;
+          p.y += (mdy/mdist) * push;
+        }
+      }
+
       if(p.x < -10) p.x = w+10;
       if(p.x > w+10) p.x = -10;
       if(p.y < -10) p.y = h+10;
@@ -1281,12 +1311,53 @@
         }
       }
     }
+
+    if(mouse.x !== null){
+      for(const p of particles){
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < MOUSE_RADIUS){
+          ctx.strokeStyle = `rgba(167,139,250,${0.5*(1-dist/MOUSE_RADIUS)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(mouse.x, mouse.y, 3, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(226,237,243,0.8)";
+      ctx.shadowColor = "rgba(34,211,238,0.9)";
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
     if(!reduceMotion) requestAnimationFrame(step);
   }
 
   resize();
   initParticles();
   window.addEventListener("resize", () => { resize(); initParticles(); });
+
+  window.addEventListener("mousemove", (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+  window.addEventListener("mouseleave", () => { mouse.x = null; mouse.y = null; });
+  document.addEventListener("mouseout", (e) => {
+    if(!e.relatedTarget) { mouse.x = null; mouse.y = null; }
+  });
+  window.addEventListener("touchmove", (e) => {
+    if(e.touches && e.touches[0]){
+      mouse.x = e.touches[0].clientX;
+      mouse.y = e.touches[0].clientY;
+    }
+  }, { passive:true });
+  window.addEventListener("touchend", () => { mouse.x = null; mouse.y = null; });
+
   if(!reduceMotion){
     requestAnimationFrame(step);
   } else {
