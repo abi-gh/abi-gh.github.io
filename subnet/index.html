@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subnet Calculator — IPv4 &amp; CIDR</title>
+<meta name="description" content="A self-contained IPv4 subnet calculator. Compute network address, broadcast, usable host range, wildcard mask, and split networks into subnets.">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#05070d;
+    --bg-panel:#0d1119;
+    --bg-panel-2:#10141e;
+    --bg-inset:#11151f;
+    --border:rgba(148,163,184,0.12);
+    --border-soft:rgba(148,163,184,0.07);
+    --text-primary:#e7ecf5;
+    --text-secondary:#8b93a7;
+    --text-dim:#565e70;
+    --accent-cyan:#22d3ee;
+    --accent-blue:#3b82f6;
+    --accent-violet:#a78bfa;
+    --accent-green:#34d399;
+    --accent-amber:#fbbf24;
+    --accent-red:#fb7185;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-void);
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  canvas#netCanvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+    display:block;
+  }
+
+  .bg-fade{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    background:radial-gradient(ellipse 90% 60% at 50% 0%, rgba(5,7,13,0) 0%, rgba(5,7,13,0.55) 55%, var(--bg-void) 100%);
+    pointer-events:none;
+  }
+
+  .wrap{
+    position:relative;
+    z-index:1;
+    max-width:1040px;
+    margin:0 auto;
+    padding:56px 20px 90px;
+  }
+
+  header.hero{
+    text-align:center;
+    margin-bottom:44px;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-cyan);
+    background:rgba(34,211,238,0.08);
+    border:1px solid rgba(34,211,238,0.25);
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:18px;
+  }
+  .eyebrow .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--accent-cyan);
+    box-shadow:0 0 8px var(--accent-cyan);
+    animation:pulseDot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulseDot{0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(30px,5vw,46px);
+    margin:0 0 12px;
+    letter-spacing:-0.01em;
+    background:linear-gradient(135deg,#f3f6fc 30%,var(--accent-cyan) 90%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  header.hero p{
+    color:var(--text-secondary);
+    font-size:15.5px;
+    max-width:560px;
+    margin:0 auto;
+    line-height:1.6;
+  }
+
+  .panel{
+    background:linear-gradient(180deg,var(--bg-panel) 0%, var(--bg-panel-2) 100%);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:26px;
+    margin-bottom:22px;
+    box-shadow:0 20px 60px -30px rgba(0,0,0,0.6);
+  }
+  .panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .panel-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:16.5px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+  }
+  .panel-title .swatch{
+    width:9px;height:9px;border-radius:2px;
+    background:var(--accent-cyan);
+    box-shadow:0 0 10px rgba(34,211,238,0.6);
+  }
+
+  /* --- Input row --- */
+  .input-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:680px){
+    .input-grid{grid-template-columns:1fr;}
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-secondary);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin-bottom:8px;
+  }
+  .field input, .field select{
+    width:100%;
+    background:var(--bg-inset);
+    border:1px solid var(--border);
+    color:var(--text-primary);
+    font-family:var(--font-mono);
+    font-size:15px;
+    padding:12px 14px;
+    border-radius:10px;
+    outline:none;
+    transition:border-color .18s ease, box-shadow .18s ease;
+  }
+  .field input:focus, .field select:focus{
+    border-color:var(--accent-cyan);
+    box-shadow:0 0 0 3px rgba(34,211,238,0.14);
+  }
+  .field input.invalid{
+    border-color:var(--accent-red);
+    box-shadow:0 0 0 3px rgba(251,113,133,0.14);
+  }
+  .field select{
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b93a7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+    padding-right:36px;
+    cursor:pointer;
+  }
+  .hint{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-top:7px;
+    min-height:16px;
+  }
+  .hint.err{ color:var(--accent-red); }
+
+  /* --- Binary visualizer --- */
+  .binary-strip{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:22px;
+  }
+  .octet-block{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    align-items:center;
+  }
+  .octet-bits{
+    display:flex;
+    gap:3px;
+    background:var(--bg-inset);
+    padding:8px;
+    border-radius:8px;
+    border:1px solid var(--border-soft);
+  }
+  .bit{
+    width:20px;height:26px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);
+    font-size:12px;
+    font-weight:600;
+    border-radius:4px;
+    color:#0a0d14;
+    background:var(--accent-violet);
+    transition:background .25s ease, box-shadow .25s ease;
+  }
+  .bit.net{
+    background:var(--accent-cyan);
+    box-shadow:0 0 10px rgba(34,211,238,0.35);
+  }
+  .octet-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-dim);
+  }
+  .legend{
+    display:flex;
+    gap:18px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  .legend-item{
+    display:flex;align-items:center;gap:7px;
+    font-size:12px;
+    color:var(--text-secondary);
+  }
+  .legend-swatch{
+    width:11px;height:11px;border-radius:3px;
+  }
+
+  /* --- Results grid --- */
+  .result-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  @media (max-width:780px){
+    .result-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:500px){
+    .result-grid{grid-template-columns:1fr;}
+  }
+  .result-card{
+    background:var(--bg-inset);
+    border:1px solid var(--border-soft);
+    border-radius:12px;
+    padding:15px 16px;
+    position:relative;
+    transition:border-color .2s ease;
+  }
+  .result-card:hover{ border-color:rgba(34,211,238,0.3); }
+  .result-card .rc-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--text-dim);
+    margin-bottom:7px;
+  }
+  .result-card .rc-value{
+    font-family:var(--font-mono);
+    font-size:16px;
+    font-weight:600;
+    color:var(--text-primary);
+    word-break:break-word;
+  }
+  .result-card .rc-copy{
+    position:absolute;
+    top:12px; right:12px;
+    background:transparent;
+    border:none;
+    color:var(--text-dim);
+    cursor:pointer;
+    padding:4px;
+    border-radius:6px;
+    display:flex;
+    transition:color .18s ease, background .18s ease;
+  }
+  .result-card .rc-copy:hover{ color:var(--accent-cyan); background:rgba(34,211,238,0.08); }
+  .result-card .rc-copy svg{ width:14px; height:14px; }
+  .result-card.accent-green .rc-value{ color:var(--accent-green); }
+  .result-card.accent-amber .rc-value{ color:var(--accent-amber); }
+  .result-card.accent-violet .rc-value{ color:var(--accent-violet); }
+
+  .badge-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+  }
+  .badge{
+    font-family:var(--font-mono);
+    font-size:12px;
+    font-weight:600;
+    padding:6px 13px;
+    border-radius:999px;
+    border:1px solid;
+  }
+  .badge.b-cyan{ color:var(--accent-cyan); border-color:rgba(34,211,238,0.35); background:rgba(34,211,238,0.07); }
+  .badge.b-violet{ color:var(--accent-violet); border-color:rgba(167,139,250,0.35); background:rgba(167,139,250,0.07); }
+  .badge.b-green{ color:var(--accent-green); border-color:rgba(52,211,153,0.35); background:rgba(52,211,153,0.07); }
+  .badge.b-amber{ color:var(--accent-amber); border-color:rgba(251,191,36,0.35); background:rgba(251,191,36,0.07); }
+
+  /* --- Split section --- */
+  .split-controls{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    margin-bottom:18px;
+  }
+  .split-controls .field{ min-width:170px; flex:1; }
+  .split-btn{
+    background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue));
+    color:#04121a;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13.5px;
+    border:none;
+    padding:12px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+  }
+  .split-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 24px -8px rgba(34,211,238,0.5); }
+
+  .subnet-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+    gap:10px;
+    max-height:420px;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+  .subnet-list::-webkit-scrollbar{ width:7px; }
+  .subnet-list::-webkit-scrollbar-thumb{ background:var(--border); border-radius:6px; }
+  .subnet-item{
+    background:var(--bg-inset);
+    border:1px solid var(--border-soft);
+    border-radius:10px;
+    padding:11px 13px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+  }
+  .subnet-item .si-index{
+    color:var(--text-dim);
+    font-size:10.5px;
+    margin-bottom:4px;
+  }
+  .subnet-item .si-net{ color:var(--accent-cyan); font-weight:600; }
+  .subnet-item .si-range{ color:var(--text-secondary); margin-top:3px; }
+  .split-more{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:12px;
+    padding:10px;
+    font-family:var(--font-mono);
+  }
+
+  /* --- Reset button --- */
+  .toolbar{
+    display:flex;
+    justify-content:flex-end;
+    margin-bottom:14px;
+  }
+  .reset-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--bg-inset);
+    border:1px solid rgba(34,211,238,0.45);
+    color:var(--text-secondary);
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:12.5px;
+    padding:8px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:border-color .2s ease, color .2s ease, background .2s ease, box-shadow .2s ease;
+    animation:resetIdleGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes resetIdleGlow{
+    0%,100%{ box-shadow:0 0 8px rgba(34,211,238,0.18); }
+    50%{ box-shadow:0 0 16px rgba(34,211,238,0.4); }
+  }
+  .reset-btn svg{ width:14px; height:14px; transition:transform .3s ease; }
+  .reset-btn:hover, .reset-btn:focus-visible{
+    animation-play-state:paused;
+    border-color:var(--accent-red);
+    color:var(--accent-red);
+    background:rgba(251,113,133,0.08);
+    box-shadow:0 0 0 4px rgba(251,113,133,0.14), 0 0 18px rgba(251,113,133,0.45);
+  }
+  .reset-btn:hover svg{ transform:rotate(-70deg); }
+  @media (prefers-reduced-motion: reduce){
+    .reset-btn{ animation:none; box-shadow:0 0 10px rgba(34,211,238,0.25); }
+  }
+
+  footer{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:12px;
+    margin-top:36px;
+    font-family:var(--font-mono);
+  }
+
+  a{ color:var(--accent-cyan); }
+</style>
+</head>
+<body>
+
+<canvas id="netCanvas"></canvas>
+<div class="bg-fade"></div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span> IPv4 · CIDR · VLSM</div>
+    <h1>Subnet Calculator</h1>
+    <p>Enter an IP address and prefix length to break down network address, broadcast, usable host range, and split the network into subnets.</p>
+  </header>
+
+  <div class="toolbar">
+    <button class="reset-btn" id="resetBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+      Reset
+    </button>
+  </div>
+
+  <!-- Input panel -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="swatch"></span>Network Input</div>
+    </div>
+
+    <div class="input-grid">
+      <div class="field">
+        <label for="ipInput">IP Address</label>
+        <input id="ipInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.168.1.0" value="">
+        <div class="hint" id="ipHint">Enter a dotted-decimal IPv4 address.</div>
+      </div>
+      <div class="field">
+        <label for="cidrInput">Prefix (CIDR)</label>
+        <select id="cidrInput"></select>
+        <div class="hint">Network bits, /0–/32.</div>
+      </div>
+      <div class="field">
+        <label for="maskInput">Subnet Mask</label>
+        <input id="maskInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="255.255.255.0">
+        <div class="hint">Synced with prefix — editable.</div>
+      </div>
+    </div>
+
+    <div class="binary-strip" id="binaryStrip"></div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-cyan);box-shadow:0 0 8px rgba(34,211,238,0.4);"></span>Network bits</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-violet);"></span>Host bits</div>
+    </div>
+  </section>
+
+  <!-- Results panel -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="swatch" style="background:var(--accent-green);box-shadow:0 0 10px rgba(52,211,153,0.6);"></span>Breakdown</div>
+    </div>
+
+    <div class="badge-row" id="badgeRow"></div>
+
+    <div class="result-grid" id="resultGrid"></div>
+  </section>
+
+  <!-- Split panel -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="swatch" style="background:var(--accent-violet);box-shadow:0 0 10px rgba(167,139,250,0.6);"></span>Split Into Subnets</div>
+    </div>
+
+    <div class="split-controls">
+      <div class="field">
+        <label for="splitMode">Split By</label>
+        <select id="splitMode">
+          <option value="count">Number of Subnets</option>
+          <option value="hosts">Hosts per Subnet</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="splitValue" id="splitValueLabel">Subnets Needed</label>
+        <input id="splitValue" type="number" min="1" placeholder="e.g. 4" value="">
+      </div>
+      <button class="split-btn" id="splitBtn" type="button">Calculate Split</button>
+    </div>
+
+    <div class="hint" id="splitSummary" style="margin-bottom:14px;"></div>
+    <div class="subnet-list" id="subnetList"></div>
+  </section>
+
+  <footer>Runs entirely client-side — no address data leaves your browser.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- IP math helpers ---------- */
+  function parseIP(str){
+    if(typeof str !== "string") return null;
+    const parts = str.trim().split(".");
+    if(parts.length !== 4) return null;
+    const octs = [];
+    for(const p of parts){
+      if(!/^\d{1,3}$/.test(p)) return null;
+      const n = parseInt(p,10);
+      if(n < 0 || n > 255) return null;
+      octs.push(n);
+    }
+    return octs;
+  }
+  function ipToInt(o){ return ((o[0]<<24) | (o[1]<<16) | (o[2]<<8) | o[3]) >>> 0; }
+  function intToIp(n){ return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join("."); }
+  function maskFromPrefix(p){ return p===0 ? 0 : (0xFFFFFFFF << (32-p)) >>> 0; }
+  function prefixFromMask(o){
+    const n = ipToInt(o);
+    let bits = 0, seenZero = false;
+    for(let i=31;i>=0;i--){
+      const bit = (n >>> i) & 1;
+      if(bit === 1){
+        if(seenZero) return null; // not contiguous, invalid mask
+        bits++;
+      } else {
+        seenZero = true;
+      }
+    }
+    return bits;
+  }
+  function fmtInt(n){ return n.toLocaleString("en-US"); }
+
+  function classify(o){
+    const first = o[0];
+    if(first >= 0 && first <= 127) return "A";
+    if(first >= 128 && first <= 191) return "B";
+    if(first >= 192 && first <= 223) return "C";
+    if(first >= 224 && first <= 239) return "D (Multicast)";
+    return "E (Reserved)";
+  }
+
+  function addressType(o){
+    const n = ipToInt(o);
+    const inRange = (base, prefix) => (n & maskFromPrefix(prefix)) === (ipToInt(base) & maskFromPrefix(prefix));
+    if(inRange([127,0,0,0],8)) return {label:"Loopback", tone:"amber"};
+    if(inRange([169,254,0,0],16)) return {label:"Link-Local (APIPA)", tone:"amber"};
+    if(inRange([10,0,0,0],8) || inRange([172,16,0,0],12) || inRange([192,168,0,0],16)) return {label:"Private", tone:"violet"};
+    if(inRange([224,0,0,0],4)) return {label:"Multicast", tone:"amber"};
+    if(inRange([240,0,0,0],4)) return {label:"Reserved", tone:"amber"};
+    return {label:"Public", tone:"green"};
+  }
+
+  /* ---------- DOM refs ---------- */
+  const ipInput = document.getElementById("ipInput");
+  const cidrInput = document.getElementById("cidrInput");
+  const maskInput = document.getElementById("maskInput");
+  const ipHint = document.getElementById("ipHint");
+  const binaryStrip = document.getElementById("binaryStrip");
+  const badgeRow = document.getElementById("badgeRow");
+  const resultGrid = document.getElementById("resultGrid");
+  const splitMode = document.getElementById("splitMode");
+  const splitValue = document.getElementById("splitValue");
+  const splitValueLabel = document.getElementById("splitValueLabel");
+  const splitBtn = document.getElementById("splitBtn");
+  const splitSummary = document.getElementById("splitSummary");
+  const subnetList = document.getElementById("subnetList");
+  const resetBtn = document.getElementById("resetBtn");
+
+  const placeholderOpt = document.createElement("option");
+  placeholderOpt.value = "";
+  placeholderOpt.textContent = "—";
+  placeholderOpt.disabled = true;
+  placeholderOpt.selected = true;
+  cidrInput.appendChild(placeholderOpt);
+
+  for(let i=0;i<=32;i++){
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = "/" + i;
+    cidrInput.appendChild(opt);
+  }
+
+  const copyIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+  const checkIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+  let syncing = false;
+
+  function currentState(){
+    const ip = parseIP(ipInput.value);
+    const prefix = parseInt(cidrInput.value, 10);
+    return { ip, prefix };
+  }
+
+  function renderBinary(ip, prefix){
+    binaryStrip.innerHTML = "";
+    ip.forEach((octet, oi) => {
+      const block = document.createElement("div");
+      block.className = "octet-block";
+      const bitsWrap = document.createElement("div");
+      bitsWrap.className = "octet-bits";
+      for(let b=0;b<8;b++){
+        const globalBit = oi*8 + b;
+        const bitVal = (octet >> (7-b)) & 1;
+        const el = document.createElement("div");
+        el.className = "bit" + (globalBit < prefix ? " net" : "");
+        el.textContent = bitVal;
+        bitsWrap.appendChild(el);
+      }
+      const label = document.createElement("div");
+      label.className = "octet-label";
+      label.textContent = "octet " + (oi+1);
+      block.appendChild(bitsWrap);
+      block.appendChild(label);
+      binaryStrip.appendChild(block);
+    });
+  }
+
+  function badge(text, tone){
+    return `<span class="badge b-${tone}">${text}</span>`;
+  }
+
+  function resultCard(label, value, tone){
+    const toneClass = tone ? " accent-" + tone : "";
+    return `
+      <div class="result-card${toneClass}">
+        <div class="rc-label">${label}</div>
+        <div class="rc-value">${value}</div>
+        <button class="rc-copy" data-copy="${value}" title="Copy" type="button">${copyIconSVG}</button>
+      </div>`;
+  }
+
+  function compute(){
+    const ipRaw = ipInput.value.trim();
+    const ip = parseIP(ipRaw);
+    const prefixRaw = cidrInput.value;
+    const hasPrefix = prefixRaw !== "";
+    const prefix = hasPrefix ? parseInt(prefixRaw, 10) : NaN;
+    const ready = !!ip && hasPrefix;
+
+    if(!ready){
+      if(ipRaw !== "" && !ip){
+        ipInput.classList.add("invalid");
+        ipHint.textContent = "Enter a valid IPv4 address, e.g. 192.168.1.0";
+        ipHint.classList.add("err");
+      } else {
+        ipInput.classList.remove("invalid");
+        ipHint.textContent = "Enter a dotted-decimal IPv4 address.";
+        ipHint.classList.remove("err");
+      }
+      resultGrid.innerHTML = "";
+      badgeRow.innerHTML = "";
+      binaryStrip.innerHTML = "";
+      if(!syncing) maskInput.value = "";
+      return;
+    }
+
+    ipInput.classList.remove("invalid");
+    ipHint.textContent = "Enter a dotted-decimal IPv4 address.";
+    ipHint.classList.remove("err");
+
+    if(!syncing){
+      maskInput.value = intToIp(maskFromPrefix(prefix));
+    }
+
+    const ipInt = ipToInt(ip);
+    const mask = maskFromPrefix(prefix);
+    const wildcard = (~mask) >>> 0;
+    const network = (ipInt & mask) >>> 0;
+    const broadcast = (network | wildcard) >>> 0;
+    const totalAddresses = Math.pow(2, 32 - prefix);
+
+    // Gateway is shown for reference (conventionally network+1) but is
+    // counted within the normal usable host range, not subtracted from it.
+    let usable, firstUsable, lastUsable, gatewayLabel;
+    if(prefix === 32){
+      usable = 1; firstUsable = network; lastUsable = network;
+      gatewayLabel = "N/A (host route)";
+    } else if(prefix === 31){
+      usable = 2; firstUsable = network; lastUsable = broadcast;
+      gatewayLabel = "N/A (point-to-point)";
+    } else {
+      usable = totalAddresses - 2;
+      firstUsable = (network + 1) >>> 0;
+      lastUsable = (broadcast - 1) >>> 0;
+      gatewayLabel = intToIp(firstUsable);
+    }
+
+    const type = addressType(ip);
+    const klass = classify(ip);
+
+    badgeRow.innerHTML =
+      badge("Class " + klass, "cyan") +
+      badge(type.label, type.tone) +
+      badge("/" + prefix, "green") +
+      badge(fmtInt(totalAddresses) + " addresses", "amber");
+
+    resultGrid.innerHTML =
+      resultCard("Network Address", intToIp(network)) +
+      resultCard("Broadcast Address", intToIp(broadcast)) +
+      resultCard("Gateway IP", gatewayLabel, "violet") +
+      resultCard("Subnet Mask", intToIp(mask)) +
+      resultCard("Wildcard Mask", intToIp(wildcard)) +
+      resultCard("First Usable Host", intToIp(firstUsable), "green") +
+      resultCard("Last Usable Host", intToIp(lastUsable), "green") +
+      resultCard("Usable Hosts", fmtInt(usable), "amber") +
+      resultCard("Total Addresses", fmtInt(totalAddresses)) +
+      resultCard("CIDR Notation", intToIp(network) + "/" + prefix, "violet");
+
+    renderBinary(ip, prefix);
+
+    // keep split value label reasonable bounds
+    if(splitMode.value === "count"){
+      splitValue.min = 1;
+    }
+  }
+
+  /* ---------- Input wiring ---------- */
+  ipInput.addEventListener("input", compute);
+
+  cidrInput.addEventListener("change", () => { syncing = false; compute(); });
+
+  maskInput.addEventListener("input", () => {
+    const o = parseIP(maskInput.value);
+    if(o){
+      const p = prefixFromMask(o);
+      if(p !== null){
+        syncing = true;
+        cidrInput.value = p;
+        compute();
+        syncing = false;
+        return;
+      }
+    }
+  });
+
+  resultGrid.addEventListener("click", (e) => {
+    const btn = e.target.closest(".rc-copy");
+    if(!btn) return;
+    const val = btn.dataset.copy;
+    navigator.clipboard?.writeText(val).then(() => {
+      const original = btn.innerHTML;
+      btn.innerHTML = checkIconSVG;
+      btn.style.color = "var(--accent-green)";
+      setTimeout(() => { btn.innerHTML = original; btn.style.color = ""; }, 1200);
+    }).catch(()=>{});
+  });
+
+  resetBtn.addEventListener("click", () => {
+    ipInput.value = "";
+    cidrInput.value = "";
+    maskInput.value = "";
+    compute();
+    subnetList.innerHTML = "";
+    splitSummary.textContent = "";
+    splitValue.value = "";
+    splitMode.value = "count";
+    splitValueLabel.textContent = "Subnets Needed";
+  });
+
+  /* ---------- Split logic ---------- */
+  splitMode.addEventListener("change", () => {
+    splitValueLabel.textContent = splitMode.value === "count" ? "Subnets Needed" : "Hosts Needed per Subnet";
+  });
+
+  splitBtn.addEventListener("click", () => {
+    const { ip, prefix } = currentState();
+    if(!ip || isNaN(prefix)){ splitSummary.textContent = "Enter a valid IP address and prefix above first."; subnetList.innerHTML = ""; return; }
+
+    const val = parseInt(splitValue.value, 10);
+    if(!val || val < 1){ splitSummary.textContent = "Enter a positive number."; subnetList.innerHTML = ""; return; }
+
+    const mask = maskFromPrefix(prefix);
+    const network = (ipToInt(ip) & mask) >>> 0;
+
+    let newPrefix;
+    if(splitMode.value === "count"){
+      const subnetBits = Math.ceil(Math.log2(Math.max(val,1)));
+      newPrefix = prefix + subnetBits;
+    } else {
+      const hostBitsNeeded = Math.ceil(Math.log2(val + 2));
+      newPrefix = 32 - hostBitsNeeded;
+    }
+
+    if(newPrefix > 32 || newPrefix < prefix){
+      splitSummary.textContent = "That request doesn't fit inside a /" + prefix + " network.";
+      subnetList.innerHTML = "";
+      return;
+    }
+
+    const blockSize = Math.pow(2, 32 - newPrefix);
+    const numSubnets = Math.pow(2, newPrefix - prefix);
+    const hostsPer = newPrefix === 32 ? 1 : (newPrefix === 31 ? 2 : blockSize - 2);
+
+    splitSummary.textContent =
+      `${fmtInt(numSubnets)} subnet${numSubnets===1?"":"s"} of /${newPrefix}, ${fmtInt(hostsPer)} usable host${hostsPer===1?"":"s"} each.`;
+
+    const CAP = 300;
+    const shown = Math.min(numSubnets, CAP);
+    let html = "";
+    for(let i=0;i<shown;i++){
+      const subNet = (network + i*blockSize) >>> 0;
+      const subBroadcast = (subNet + blockSize - 1) >>> 0;
+      const first = newPrefix >= 31 ? subNet : (subNet+1)>>>0;
+      const last = newPrefix >= 31 ? subBroadcast : (subBroadcast-1)>>>0;
+      const gw = newPrefix >= 31 ? null : first;
+      html += `
+        <div class="subnet-item">
+          <div class="si-index">Subnet ${i+1}</div>
+          <div class="si-net">${intToIp(subNet)}/${newPrefix}</div>
+          ${gw ? `<div class="si-range">GW ${intToIp(gw)}</div>` : ""}
+          <div class="si-range">${intToIp(first)} – ${intToIp(last)}</div>
+        </div>`;
+    }
+    if(numSubnets > CAP){
+      html += `<div class="split-more">+ ${fmtInt(numSubnets - CAP)} more subnets not shown</div>`;
+    }
+    subnetList.innerHTML = html;
+  });
+
+  compute();
+
+  /* ---------- Background: network / packet-flow canvas ---------- */
+  const canvas = document.getElementById("netCanvas");
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let w, h, dpr;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w+"px"; canvas.style.height = h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const NODE_COUNT = Math.max(10, Math.min(20, Math.floor(w/110)));
+  const nodes = [];
+  for(let i=0;i<NODE_COUNT;i++){
+    nodes.push({
+      x: Math.random()*w,
+      y: Math.random()*h,
+      vx: (Math.random()-0.5)*0.15,
+      vy: (Math.random()-0.5)*0.15,
+      r: 2 + Math.random()*1.8
+    });
+  }
+
+  // build a sparse set of edges (each node connects to 1-2 nearest neighbors)
+  function buildEdges(){
+    const edges = [];
+    nodes.forEach((n, i) => {
+      const dists = nodes.map((m,j)=>({j, d: j===i?Infinity:Math.hypot(n.x-m.x,n.y-m.y)}))
+                          .sort((a,b)=>a.d-b.d);
+      const linkCount = 1 + Math.floor(Math.random()*2);
+      for(let k=0;k<linkCount;k++){
+        const j = dists[k].j;
+        if(j===undefined) continue;
+        const key = i<j ? i+"-"+j : j+"-"+i;
+        if(!edges.some(e=>e.key===key)) edges.push({key, a:i, b:j});
+      }
+    });
+    return edges;
+  }
+  let edges = buildEdges();
+  let edgeRebuildTimer = 0;
+
+  const mouse = { x: 0, y: 0, active: false };
+  const MOUSE_RADIUS = 150;
+  const pulses = [];
+
+  function setMouse(clientX, clientY){
+    mouse.x = clientX; mouse.y = clientY; mouse.active = true;
+  }
+  window.addEventListener("mousemove", (e) => setMouse(e.clientX, e.clientY));
+  window.addEventListener("mouseleave", () => { mouse.active = false; });
+  window.addEventListener("touchmove", (e) => {
+    if(e.touches && e.touches[0]) setMouse(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener("touchend", () => { mouse.active = false; });
+
+  function spawnPulse(x, y){
+    pulses.push({ x, y, r: 2, alpha: 0.55 });
+  }
+  window.addEventListener("click", (e) => spawnPulse(e.clientX, e.clientY));
+  window.addEventListener("touchstart", (e) => {
+    if(e.touches && e.touches[0]) spawnPulse(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  const colors = ["#22d3ee","#3b82f6","#a78bfa","#34d399","#fbbf24"];
+  const packets = edges.map(e => ({
+    edge: e,
+    t: Math.random(),
+    speed: 0.0025 + Math.random()*0.004,
+    color: colors[Math.floor(Math.random()*colors.length)]
+  }));
+
+  function step(){
+    ctx.clearRect(0,0,w,h);
+
+    // move nodes gently, drifting away from the cursor when it's nearby
+    nodes.forEach(n => {
+      if(mouse.active && !reduceMotion){
+        const dx = n.x - mouse.x, dy = n.y - mouse.y;
+        const dist = Math.hypot(dx, dy);
+        if(dist < MOUSE_RADIUS && dist > 0.01){
+          const force = (1 - dist / MOUSE_RADIUS) * 1.8;
+          n.x += (dx / dist) * force;
+          n.y += (dy / dist) * force;
+        }
+      }
+      n.x += n.vx; n.y += n.vy;
+      if(n.x < 0 || n.x > w) n.vx *= -1;
+      if(n.y < 0 || n.y > h) n.vy *= -1;
+    });
+
+    // draw edges
+    ctx.lineWidth = 1;
+    edges.forEach(e => {
+      const a = nodes[e.a], b = nodes[e.b];
+      const grad = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+      grad.addColorStop(0,"rgba(59,130,246,0.10)");
+      grad.addColorStop(1,"rgba(34,211,238,0.10)");
+      ctx.strokeStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(a.x,a.y);
+      ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+    });
+
+    // draw nodes
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(139,147,167,0.5)";
+      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fill();
+    });
+
+    // draw traveling packets
+    if(!reduceMotion){
+      packets.forEach(p => {
+        p.t += p.speed;
+        if(p.t > 1){ p.t = 0; p.color = colors[Math.floor(Math.random()*colors.length)]; }
+        const a = nodes[p.edge.a], b = nodes[p.edge.b];
+        const x = a.x + (b.x-a.x)*p.t;
+        const y = a.y + (b.y-a.y)*p.t;
+        ctx.beginPath();
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.arc(x,y,2.1,0,Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    // cursor: thin links to nearby nodes + a glowing dot
+    if(mouse.active && !reduceMotion){
+      nodes.forEach(n => {
+        const dist = Math.hypot(n.x - mouse.x, n.y - mouse.y);
+        if(dist < MOUSE_RADIUS){
+          ctx.strokeStyle = `rgba(167,139,250,${(1 - dist / MOUSE_RADIUS) * 0.4})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(mouse.x, mouse.y);
+          ctx.lineTo(n.x, n.y);
+          ctx.stroke();
+        }
+      });
+      ctx.beginPath();
+      ctx.fillStyle = "#22d3ee";
+      ctx.shadowColor = "#22d3ee";
+      ctx.shadowBlur = 14;
+      ctx.arc(mouse.x, mouse.y, 3.4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // click / tap pings
+    for(let i = pulses.length - 1; i >= 0; i--){
+      const p = pulses[i];
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(34,211,238,${p.alpha})`;
+      ctx.lineWidth = 1.6;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.stroke();
+      p.r += 2.6;
+      p.alpha -= 0.014;
+      if(p.alpha <= 0) pulses.splice(i, 1);
+    }
+
+    edgeRebuildTimer++;
+    if(edgeRebuildTimer > 600){
+      edgeRebuildTimer = 0;
+      edges = buildEdges();
+      packets.length = 0;
+      edges.forEach(e => packets.push({
+        edge: e, t: Math.random(),
+        speed: 0.0025 + Math.random()*0.004,
+        color: colors[Math.floor(Math.random()*colors.length)]
+      }));
+    }
+
+    requestAnimationFrame(step);
+  }
+  step();
+
+})();
+</script>
+</body>
+</html>
