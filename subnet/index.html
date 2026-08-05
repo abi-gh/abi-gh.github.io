@@ -441,7 +441,7 @@
     background:linear-gradient(180deg,var(--bg-panel) 0%, var(--bg-panel-2) 100%);
     border:1px solid var(--border);
     border-radius:20px;
-    padding:26px 28px 14px;
+    padding:0;
     max-width:520px;
     width:100%;
     max-height:82vh;
@@ -457,16 +457,21 @@
   }
   .modal-panel::-webkit-scrollbar{ width:7px; }
   .modal-panel::-webkit-scrollbar-thumb{ background:var(--border); border-radius:6px; }
+  .modal-sticky{
+    position:sticky;
+    top:0;
+    z-index:5;
+    background:var(--bg-panel);
+    padding:26px 28px 0;
+    border-bottom:1px solid var(--border);
+    box-shadow:0 14px 24px -16px rgba(0,0,0,0.65);
+  }
   .modal-head{
     display:flex;
     justify-content:space-between;
     align-items:flex-start;
     gap:14px;
     margin-bottom:14px;
-    position:sticky;
-    top:-26px;
-    background:var(--bg-panel);
-    padding-top:2px;
   }
   .modal-title{
     font-family:var(--font-display);
@@ -492,6 +497,7 @@
   .modal-close svg{ width:15px; height:15px; }
   .modal-close:hover{ border-color:var(--accent-red); color:var(--accent-red); }
 
+  .cheat-body{ padding:6px 28px 22px; }
   .cheat-row{
     display:flex;
     align-items:center;
@@ -508,10 +514,8 @@
     font-family:var(--font-body);
     font-weight:600;
     font-size:10.5px;
-    position:sticky;
-    top:44px;
-    background:var(--bg-panel);
-    z-index:1;
+    border-bottom:none;
+    padding:0 4px 12px;
   }
   .cheat-cidr{ width:56px; color:var(--accent-cyan); font-weight:700; flex-shrink:0; }
   .cheat-row-head .cheat-cidr{ color:var(--text-dim); font-weight:600; }
@@ -593,21 +597,23 @@
 
   <div class="modal-backdrop" id="cheatBackdrop">
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="cheatTitle">
-      <div class="modal-head">
-        <div>
-          <div id="cheatTitle" class="modal-title">CIDR ↔ Subnet Mask Cheat Sheet</div>
-          <div class="modal-sub">Every prefix length, its mask, and usable hosts.</div>
+      <div class="modal-sticky">
+        <div class="modal-head">
+          <div>
+            <div id="cheatTitle" class="modal-title">CIDR ↔ Subnet Mask Cheat Sheet</div>
+            <div class="modal-sub">Every prefix length, its mask, and usable hosts.</div>
+          </div>
+          <button class="modal-close" id="cheatClose" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
-        <button class="modal-close" id="cheatClose" type="button" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
+        <div class="cheat-row cheat-row-head">
+          <span class="cheat-cidr">CIDR</span>
+          <span class="cheat-mask">Subnet Mask</span>
+          <span class="cheat-hosts">Usable Hosts</span>
+        </div>
       </div>
-      <div class="cheat-row cheat-row-head">
-        <span class="cheat-cidr">CIDR</span>
-        <span class="cheat-mask">Subnet Mask</span>
-        <span class="cheat-hosts">Usable Hosts</span>
-      </div>
-      <div id="cheatList"></div>
+      <div class="cheat-body" id="cheatList"></div>
     </div>
   </div>
 
