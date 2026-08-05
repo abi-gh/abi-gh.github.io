@@ -62,9 +62,9 @@
   .wrap{
     position:relative;
     z-index:1;
-    max-width:1040px;
+    max-width:1440px;
     margin:0 auto;
-    padding:56px 20px 90px;
+    padding:56px 24px 90px;
   }
 
   header.hero{
@@ -142,11 +142,111 @@
     background:var(--accent-cyan);
     box-shadow:0 0 10px rgba(34,211,238,0.6);
   }
+  .panel-title-tag{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--text-dim);
+    background:var(--bg-inset);
+    border:1px solid var(--border);
+    padding:2px 8px;
+    border-radius:999px;
+    margin-left:4px;
+  }
 
-  /* --- Input row --- */
+  /* --- Dual IPv4 / IPv6 columns --- */
+  .dual-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width:900px){
+    .dual-grid{ grid-template-columns:1fr; }
+  }
+  #resultsGrid{ margin-top:22px; margin-bottom:22px; }
+  #resultsGrid.v4-only .ipv6-col{ display:none; }
+  #resultsGrid.v4-only .ipv4-col{ grid-column:1 / -1; }
+  #resultsGrid.v6-only .ipv4-col{ display:none; }
+  #resultsGrid.v6-only .ipv6-col{ grid-column:1 / -1; }
+  #resultsGrid.v4-only .ipv4-col .result-grid,
+  #resultsGrid.v6-only .ipv6-col .result-grid{
+    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  }
+  .calc-column .panel{ margin-bottom:22px; }
+  .calc-column .panel:last-child{ margin-bottom:0; }
+  .col-head{
+    display:flex;
+    align-items:baseline;
+    gap:9px;
+    margin-bottom:14px;
+    padding-left:2px;
+  }
+  .col-tag{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.02em;
+    padding:3px 12px;
+    border-radius:7px;
+  }
+  .col-tag.v4{
+    color:var(--accent-cyan);
+    background:rgba(34,211,238,0.09);
+    border:1px solid rgba(34,211,238,0.3);
+  }
+  .col-tag.v6{
+    color:var(--accent-violet);
+    background:rgba(167,139,250,0.09);
+    border:1px solid rgba(167,139,250,0.3);
+  }
+  .col-tag-sub{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-dim);
+  }
+  .input-grid-v6{
+    grid-template-columns:2fr 1fr;
+  }
+  @media (max-width:520px){
+    .input-grid-v6{ grid-template-columns:1fr; }
+  }
+
+  /* --- Private ranges panel --- */
+  .private-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:14px;
+  }
+  .private-card{
+    background:var(--bg-inset);
+    border:1px solid var(--border-soft);
+    border-radius:12px;
+    padding:15px 16px;
+  }
+  .private-card .pc-range{
+    font-family:var(--font-mono);
+    font-size:15px;
+    font-weight:700;
+    color:var(--accent-violet);
+    margin-bottom:4px;
+  }
+  .private-card .pc-name{
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-primary);
+    margin-bottom:6px;
+  }
+  .private-card .pc-desc{
+    font-size:12.5px;
+    color:var(--text-secondary);
+    line-height:1.55;
+  }
+
+
   .input-grid{
     display:grid;
-    grid-template-columns:2fr 1fr 1fr;
+    grid-template-columns:1.6fr 0.9fr 1.3fr;
     gap:16px;
   }
   @media (max-width:680px){
@@ -234,6 +334,10 @@
     background:var(--accent-cyan);
     box-shadow:0 0 10px rgba(34,211,238,0.35);
   }
+  .bit.split{
+    background:linear-gradient(135deg,var(--accent-cyan) 50%,var(--accent-violet) 50%);
+    box-shadow:0 0 10px rgba(167,139,250,0.3);
+  }
   .octet-label{
     font-family:var(--font-mono);
     font-size:11px;
@@ -270,8 +374,14 @@
     background:var(--bg-inset);
     border:1px solid var(--border-soft);
     border-radius:12px;
-    padding:15px 16px;
+    padding:14px 38px 14px 16px;
+    height:78px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:5px;
     position:relative;
+    overflow:hidden;
     transition:border-color .2s ease;
   }
   .result-card:hover{ border-color:rgba(34,211,238,0.3); }
@@ -280,18 +390,23 @@
     text-transform:uppercase;
     letter-spacing:0.06em;
     color:var(--text-dim);
-    margin-bottom:7px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .result-card .rc-value{
     font-family:var(--font-mono);
-    font-size:16px;
+    font-size:15px;
     font-weight:600;
     color:var(--text-primary);
-    word-break:break-word;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .result-card .rc-copy{
     position:absolute;
-    top:12px; right:12px;
+    top:50%; right:12px;
+    transform:translateY(-50%);
     background:transparent;
     border:none;
     color:var(--text-dim);
@@ -579,7 +694,7 @@
 <div class="wrap">
 
   <header class="hero">
-    <div class="eyebrow"><span class="dot"></span> IPv4 · CIDR · VLSM</div>
+    <div class="eyebrow"><span class="dot"></span> IPv4 · IPv6 · CIDR · VLSM</div>
     <h1>Subnet Calculator</h1>
     <p>Enter an IP address and prefix length to break down network address, broadcast, usable host range, and split the network into subnets.</p>
   </header>
@@ -617,52 +732,108 @@
     </div>
   </div>
 
-  <!-- Input panel -->
-  <section class="panel">
-    <div class="panel-head">
-      <div class="panel-title"><span class="swatch"></span>Network Input</div>
-    </div>
+  <div class="dual-grid" id="inputsGrid">
 
-    <div class="input-grid">
-      <div class="field">
-        <label for="ipInput">IP Address</label>
-        <input id="ipInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.168.1.0" value="">
-        <div class="hint" id="ipHint">Enter a dotted-decimal IPv4 address.</div>
+    <!-- ===== IPv4 column ===== -->
+    <div class="calc-column ipv4-col">
+      <div class="col-head">
+        <span class="col-tag v4">IPv4</span>
+        <span class="col-tag-sub">32-bit</span>
       </div>
-      <div class="field">
-        <label for="cidrInput">Prefix (CIDR)</label>
-        <select id="cidrInput"></select>
-        <div class="hint">Network bits, /0–/32.</div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="swatch"></span>Network Input</div>
+        </div>
+
+        <div class="input-grid">
+          <div class="field">
+            <label for="ipInput">IP Address</label>
+            <input id="ipInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.168.1.0" value="">
+            <div class="hint" id="ipHint">Enter a dotted-decimal IPv4 address.</div>
+          </div>
+          <div class="field">
+            <label for="cidrInput">Prefix (CIDR)</label>
+            <select id="cidrInput"></select>
+            <div class="hint">Network bits, /0–/32.</div>
+          </div>
+          <div class="field">
+            <label for="maskInput">Subnet Mask</label>
+            <input id="maskInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="255.255.255.0">
+            <div class="hint">Synced with prefix — editable.</div>
+          </div>
+        </div>
+
+        <div class="binary-strip" id="binaryStrip"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-cyan);box-shadow:0 0 8px rgba(34,211,238,0.4);"></span>Network bits</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-violet);"></span>Host bits</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== IPv6 column ===== -->
+    <div class="calc-column ipv6-col">
+      <div class="col-head">
+        <span class="col-tag v6">IPv6</span>
+        <span class="col-tag-sub">128-bit</span>
       </div>
-      <div class="field">
-        <label for="maskInput">Subnet Mask</label>
-        <input id="maskInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="255.255.255.0">
-        <div class="hint">Synced with prefix — editable.</div>
-      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="swatch" style="background:var(--accent-violet);box-shadow:0 0 10px rgba(167,139,250,0.6);"></span>Network Input</div>
+        </div>
+
+        <div class="input-grid input-grid-v6">
+          <div class="field">
+            <label for="ip6Input">IPv6 Address</label>
+            <input id="ip6Input" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="2001:db8::" value="">
+            <div class="hint" id="ip6Hint">Compressed or full notation both work.</div>
+          </div>
+          <div class="field">
+            <label for="cidr6Input">Prefix (CIDR)</label>
+            <select id="cidr6Input"></select>
+            <div class="hint">Network bits, /0–/128.</div>
+          </div>
+        </div>
+
+        <div class="binary-strip" id="binaryStrip6"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-cyan);box-shadow:0 0 8px rgba(34,211,238,0.4);"></span>Network bits</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-violet);"></span>Host bits</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:linear-gradient(135deg,var(--accent-cyan) 50%,var(--accent-violet) 50%);"></span>Split nibble</div>
+        </div>
+      </section>
     </div>
 
-    <div class="binary-strip" id="binaryStrip"></div>
-    <div class="legend">
-      <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-cyan);box-shadow:0 0 8px rgba(34,211,238,0.4);"></span>Network bits</div>
-      <div class="legend-item"><span class="legend-swatch" style="background:var(--accent-violet);"></span>Host bits</div>
+  </div>
+
+  <div class="dual-grid" id="resultsGrid">
+    <div class="calc-column ipv4-col">
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="swatch" style="background:var(--accent-green);box-shadow:0 0 10px rgba(52,211,153,0.6);"></span>Breakdown <span class="panel-title-tag">IPv4</span></div>
+        </div>
+        <div class="badge-row" id="badgeRow"></div>
+        <div class="result-grid" id="resultGrid"></div>
+      </section>
     </div>
-  </section>
 
-  <!-- Results panel -->
-  <section class="panel">
-    <div class="panel-head">
-      <div class="panel-title"><span class="swatch" style="background:var(--accent-green);box-shadow:0 0 10px rgba(52,211,153,0.6);"></span>Breakdown</div>
+    <div class="calc-column ipv6-col">
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="swatch" style="background:var(--accent-green);box-shadow:0 0 10px rgba(52,211,153,0.6);"></span>Breakdown <span class="panel-title-tag">IPv6</span></div>
+        </div>
+        <div class="badge-row" id="badgeRow6"></div>
+        <div class="result-grid" id="resultGrid6"></div>
+      </section>
     </div>
-
-    <div class="badge-row" id="badgeRow"></div>
-
-    <div class="result-grid" id="resultGrid"></div>
-  </section>
+  </div>
 
   <!-- Split panel -->
   <section class="panel">
     <div class="panel-head">
-      <div class="panel-title"><span class="swatch" style="background:var(--accent-violet);box-shadow:0 0 10px rgba(167,139,250,0.6);"></span>Split Into Subnets</div>
+      <div class="panel-title"><span class="swatch" style="background:var(--accent-violet);box-shadow:0 0 10px rgba(167,139,250,0.6);"></span>Split Into Subnets <span class="panel-title-tag">IPv4</span></div>
     </div>
 
     <div class="split-controls">
@@ -684,10 +855,20 @@
     <div class="subnet-list" id="subnetList"></div>
   </section>
 
+  <!-- Private IPv6 ranges panel -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span class="swatch" style="background:var(--accent-amber);box-shadow:0 0 10px rgba(251,191,36,0.6);"></span>Private / Non-Routable IPv6 Ranges</div>
+      <button class="split-btn" id="genULABtn" type="button">Generate Random ULA /48</button>
+    </div>
+    <div class="private-grid" id="privateGrid"></div>
+  </section>
+
   <footer>Runs entirely client-side — no address data leaves your browser.</footer>
 </div>
 
 <script>
+
 (function(){
   "use strict";
 
@@ -744,6 +925,82 @@
     return {label:"Public", tone:"green"};
   }
 
+  /* ---------- IPv6 math helpers ---------- */
+  function parseIPv6(str){
+    if(typeof str !== "string") return null;
+    str = str.trim();
+    if(str === "" || !/^[0-9a-fA-F:]+$/.test(str)) return null;
+    if((str.match(/::/g) || []).length > 1) return null;
+
+    let groups;
+    if(str.includes("::")){
+      const [left, right] = str.split("::");
+      const leftParts = left ? left.split(":") : [];
+      const rightParts = right ? right.split(":") : [];
+      if(leftParts.some(p => p === "") || rightParts.some(p => p === "")) return null;
+      const missing = 8 - (leftParts.length + rightParts.length);
+      if(missing < 0) return null;
+      const all = [...leftParts, ...new Array(missing).fill("0"), ...rightParts];
+      if(all.length !== 8) return null;
+      groups = all.map(p => parseInt(p, 16));
+    } else {
+      const parts = str.split(":");
+      if(parts.length !== 8) return null;
+      groups = parts.map(p => (/^[0-9a-fA-F]{1,4}$/.test(p) ? parseInt(p, 16) : NaN));
+    }
+    if(groups.some(g => isNaN(g) || g < 0 || g > 0xffff)) return null;
+    return groups;
+  }
+  function expandIPv6(groups){ return groups.map(g => g.toString(16).padStart(4,"0")).join(":"); }
+  function compressIPv6(groups){
+    let bestStart = -1, bestLen = 0, curStart = -1, curLen = 0;
+    for(let i=0;i<8;i++){
+      if(groups[i] === 0){
+        if(curStart === -1) curStart = i;
+        curLen++;
+        if(curLen > bestLen){ bestLen = curLen; bestStart = curStart; }
+      } else { curStart = -1; curLen = 0; }
+    }
+    if(bestLen < 2) return groups.map(g => g.toString(16)).join(":");
+    const before = groups.slice(0, bestStart).map(g => g.toString(16));
+    const after = groups.slice(bestStart + bestLen).map(g => g.toString(16));
+    return before.join(":") + "::" + after.join(":");
+  }
+  function ipv6ToBigInt(groups){
+    let n = 0n;
+    for(const g of groups) n = (n << 16n) | BigInt(g);
+    return n;
+  }
+  function bigIntToGroups(n){
+    const groups = [];
+    for(let i=0;i<8;i++){ groups.unshift(Number(n & 0xffffn)); n >>= 16n; }
+    return groups;
+  }
+  const V6_ONES = (1n << 128n) - 1n;
+  function maskFromPrefix128(p){
+    if(p <= 0) return 0n;
+    if(p >= 128) return V6_ONES;
+    return (V6_ONES << BigInt(128 - p)) & V6_ONES;
+  }
+  function ipv6Type(bigAddr){
+    const test = (str, prefix) => (bigAddr & maskFromPrefix128(prefix)) === (ipv6ToBigInt(parseIPv6(str)) & maskFromPrefix128(prefix));
+    if(bigAddr === 0n) return {label:"Unspecified", tone:"amber"};
+    if(bigAddr === 1n) return {label:"Loopback", tone:"amber"};
+    if(test("fe80::",10)) return {label:"Link-Local", tone:"amber"};
+    if(test("fc00::",7)) return {label:"Unique Local (ULA) — Private", tone:"violet"};
+    if(test("ff00::",8)) return {label:"Multicast", tone:"amber"};
+    if(test("2001:db8::",32)) return {label:"Documentation", tone:"amber"};
+    if(test("2000::",3)) return {label:"Global Unicast", tone:"green"};
+    return {label:"Reserved / Other", tone:"amber"};
+  }
+  function fmtBig(n){ return n.toLocaleString("en-US"); }
+  function ip6ArpaZone(networkGroups, prefix){
+    const nibbleCount = Math.max(1, Math.ceil(prefix / 4));
+    const allNibbles = expandIPv6(networkGroups).replace(/:/g, "").split("");
+    const zoneNibbles = allNibbles.slice(0, nibbleCount).reverse();
+    return zoneNibbles.join(".") + ".ip6.arpa.";
+  }
+
   /* ---------- DOM refs ---------- */
   const ipInput = document.getElementById("ipInput");
   const cidrInput = document.getElementById("cidrInput");
@@ -763,6 +1020,14 @@
   const cheatBackdrop = document.getElementById("cheatBackdrop");
   const cheatClose = document.getElementById("cheatClose");
   const cheatList = document.getElementById("cheatList");
+  const ip6Input = document.getElementById("ip6Input");
+  const cidr6Input = document.getElementById("cidr6Input");
+  const ip6Hint = document.getElementById("ip6Hint");
+  const binaryStrip6 = document.getElementById("binaryStrip6");
+  const badgeRow6 = document.getElementById("badgeRow6");
+  const resultGrid6 = document.getElementById("resultGrid6");
+  const privateGrid = document.getElementById("privateGrid");
+  const genULABtn = document.getElementById("genULABtn");
 
   const placeholderOpt = document.createElement("option");
   placeholderOpt.value = "";
@@ -778,10 +1043,32 @@
     cidrInput.appendChild(opt);
   }
 
+  const placeholderOpt6 = document.createElement("option");
+  placeholderOpt6.value = "";
+  placeholderOpt6.textContent = "—";
+  placeholderOpt6.disabled = true;
+  placeholderOpt6.selected = true;
+  cidr6Input.appendChild(placeholderOpt6);
+
+  for(let i=0;i<=128;i++){
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = "/" + i;
+    cidr6Input.appendChild(opt);
+  }
+
   const copyIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
   const checkIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 
   let syncing = false;
+  let ipv4Ready = false;
+  let ipv6Ready = false;
+  const resultsGrid = document.getElementById("resultsGrid");
+  function updateDualLayout(){
+    resultsGrid.classList.remove("v4-only", "v6-only");
+    if(ipv4Ready && !ipv6Ready) resultsGrid.classList.add("v4-only");
+    else if(ipv6Ready && !ipv4Ready) resultsGrid.classList.add("v6-only");
+  }
 
   function currentState(){
     const ip = parseIP(ipInput.value);
@@ -813,6 +1100,35 @@
     });
   }
 
+  function renderBinary6(groups, prefix){
+    binaryStrip6.innerHTML = "";
+    groups.forEach((hextet, gi) => {
+      const block = document.createElement("div");
+      block.className = "octet-block";
+      const bitsWrap = document.createElement("div");
+      bitsWrap.className = "octet-bits";
+      const hex = hextet.toString(16).padStart(4,"0");
+      for(let n=0;n<4;n++){
+        const nibbleStart = gi*16 + n*4;
+        const nibbleEnd = nibbleStart + 4;
+        const el = document.createElement("div");
+        let cls = "bit";
+        if(nibbleEnd <= prefix) cls += " net";
+        else if(nibbleStart >= prefix) cls += "";
+        else cls += " split";
+        el.className = cls;
+        el.textContent = hex[n];
+        bitsWrap.appendChild(el);
+      }
+      const label = document.createElement("div");
+      label.className = "octet-label";
+      label.textContent = "group " + (gi+1);
+      block.appendChild(bitsWrap);
+      block.appendChild(label);
+      binaryStrip6.appendChild(block);
+    });
+  }
+
   function badge(text, tone){
     return `<span class="badge b-${tone}">${text}</span>`;
   }
@@ -822,7 +1138,7 @@
     return `
       <div class="result-card${toneClass}">
         <div class="rc-label">${label}</div>
-        <div class="rc-value">${value}</div>
+        <div class="rc-value" title="${value}">${value}</div>
         <button class="rc-copy" data-copy="${value}" title="Copy" type="button">${copyIconSVG}</button>
       </div>`;
   }
@@ -834,6 +1150,8 @@
     const hasPrefix = prefixRaw !== "";
     const prefix = hasPrefix ? parseInt(prefixRaw, 10) : NaN;
     const ready = !!ip && hasPrefix;
+    ipv4Ready = ready;
+    updateDualLayout();
 
     if(!ready){
       if(ipRaw !== "" && !ip){
@@ -867,20 +1185,21 @@
     const broadcast = (network | wildcard) >>> 0;
     const totalAddresses = Math.pow(2, 32 - prefix);
 
-    // Gateway is shown for reference (conventionally network+1) but is
-    // counted within the normal usable host range, not subtracted from it.
-    let usable, firstUsable, lastUsable, gatewayLabel;
+    // Gateway is conventionally network+1 — the same address as First Usable
+    // Host in the normal case, so it's noted in that card's label rather than
+    // shown as its own duplicate card.
+    let usable, firstUsable, lastUsable, firstUsableLabel;
     if(prefix === 32){
       usable = 1; firstUsable = network; lastUsable = network;
-      gatewayLabel = "N/A (host route)";
+      firstUsableLabel = "First Usable Host";
     } else if(prefix === 31){
       usable = 2; firstUsable = network; lastUsable = broadcast;
-      gatewayLabel = "N/A (point-to-point)";
+      firstUsableLabel = "First Usable Host";
     } else {
       usable = totalAddresses - 2;
       firstUsable = (network + 1) >>> 0;
       lastUsable = (broadcast - 1) >>> 0;
-      gatewayLabel = intToIp(firstUsable);
+      firstUsableLabel = "First Usable Host (Gateway)";
     }
 
     const type = addressType(ip);
@@ -895,10 +1214,9 @@
     resultGrid.innerHTML =
       resultCard("Network Address", intToIp(network)) +
       resultCard("Broadcast Address", intToIp(broadcast)) +
-      resultCard("Gateway IP", gatewayLabel, "violet") +
       resultCard("Subnet Mask", intToIp(mask)) +
       resultCard("Wildcard Mask", intToIp(wildcard)) +
-      resultCard("First Usable Host", intToIp(firstUsable), "green") +
+      resultCard(firstUsableLabel, intToIp(firstUsable), "green") +
       resultCard("Last Usable Host", intToIp(lastUsable), "green") +
       resultCard("Usable Hosts", fmtInt(usable), "amber") +
       resultCard("Total Addresses", fmtInt(totalAddresses)) +
@@ -912,10 +1230,102 @@
     }
   }
 
+  function compute6(){
+    const ipRaw = ip6Input.value.trim();
+    const groups = parseIPv6(ipRaw);
+    const prefixRaw = cidr6Input.value;
+    const hasPrefix = prefixRaw !== "";
+    const prefix = hasPrefix ? parseInt(prefixRaw, 10) : NaN;
+    const ready = !!groups && hasPrefix;
+    ipv6Ready = ready;
+    updateDualLayout();
+
+    if(!ready){
+      if(ipRaw !== "" && !groups){
+        ip6Input.classList.add("invalid");
+        ip6Hint.textContent = "Enter a valid IPv6 address, e.g. 2001:db8::1";
+        ip6Hint.classList.add("err");
+      } else {
+        ip6Input.classList.remove("invalid");
+        ip6Hint.textContent = "Compressed or full notation both work.";
+        ip6Hint.classList.remove("err");
+      }
+      resultGrid6.innerHTML = "";
+      badgeRow6.innerHTML = "";
+      binaryStrip6.innerHTML = "";
+      return;
+    }
+
+    ip6Input.classList.remove("invalid");
+    ip6Hint.textContent = "Compressed or full notation both work.";
+    ip6Hint.classList.remove("err");
+
+    const addrBig = ipv6ToBigInt(groups);
+    const mask = maskFromPrefix128(prefix);
+    const wildcard = mask ^ V6_ONES;
+    const networkBig = addrBig & mask;
+    const lastBig = networkBig | wildcard;
+    const networkGroups = bigIntToGroups(networkBig);
+    const lastGroups = bigIntToGroups(lastBig);
+    const totalAddresses = 2n ** BigInt(128 - prefix);
+    const type = ipv6Type(addrBig);
+
+    badgeRow6.innerHTML =
+      badge(type.label, type.tone) +
+      badge("/" + prefix, "green") +
+      badge("2^" + (128-prefix) + " addresses", "amber");
+
+    resultGrid6.innerHTML =
+      resultCard("Expanded Address", expandIPv6(groups)) +
+      resultCard("Compressed Address", compressIPv6(groups)) +
+      resultCard("Network Prefix", compressIPv6(networkGroups) + "/" + prefix, "violet") +
+      resultCard("First Address", compressIPv6(networkGroups), "green") +
+      resultCard("Last Address", compressIPv6(lastGroups), "green") +
+      resultCard("Host Bits", fmtInt(128 - prefix), "amber") +
+      resultCard("Total Addresses", fmtBig(totalAddresses) + " (2^" + (128-prefix) + ")") +
+      resultCard("CIDR Notation", compressIPv6(groups) + "/" + prefix, "violet") +
+      resultCard("Reverse DNS Zone", ip6ArpaZone(networkGroups, prefix), "violet");
+
+    renderBinary6(groups, prefix);
+  }
+
+  /* ---------- Private IPv6 ranges ---------- */
+  const PRIVATE_V6_RANGES = [
+    { range:"fc00::/7", name:"Unique Local Address (ULA) space", desc:"RFC 4193 — the whole private, non-routable block. Never announced to the public internet." },
+    { range:"fd00::/8", name:"Locally-assigned ULA", desc:"The practical subset to use — generate a random 40-bit Global ID and assign /48 or /64 subnets from it for internal networks." },
+    { range:"fe80::/10", name:"Link-Local", desc:"Auto-configured on every interface. Not routable off the local link, but always present for neighbor discovery and local-only traffic." },
+    { range:"::1/128", name:"Loopback", desc:"The IPv6 equivalent of 127.0.0.1 — localhost only." },
+    { range:"2001:db8::/32", name:"Documentation range", desc:"Reserved for examples, docs, and lab diagrams only — never deploy this on real infrastructure." }
+  ];
+  function renderPrivateRanges(){
+    privateGrid.innerHTML = PRIVATE_V6_RANGES.map(r => `
+      <div class="private-card">
+        <div class="pc-range">${r.range}</div>
+        <div class="pc-name">${r.name}</div>
+        <div class="pc-desc">${r.desc}</div>
+      </div>`).join("");
+  }
+  renderPrivateRanges();
+
+  genULABtn.addEventListener("click", () => {
+    const bytes = new Uint8Array(5);
+    (window.crypto || window.msCrypto).getRandomValues(bytes);
+    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2,"0")).join("");
+    const ula = `fd${hex.slice(0,2)}:${hex.slice(2,6)}:${hex.slice(6,10)}::`;
+    ip6Input.value = ula;
+    cidr6Input.value = 48;
+    compute6();
+    ip6Input.scrollIntoView({ behavior: "smooth", block: "center" });
+    ip6Input.focus();
+  });
+
   /* ---------- Input wiring ---------- */
   ipInput.addEventListener("input", compute);
 
   cidrInput.addEventListener("change", () => { syncing = false; compute(); });
+
+  ip6Input.addEventListener("input", compute6);
+  cidr6Input.addEventListener("change", compute6);
 
   maskInput.addEventListener("input", () => {
     const o = parseIP(maskInput.value);
@@ -931,17 +1341,21 @@
     }
   });
 
-  resultGrid.addEventListener("click", (e) => {
-    const btn = e.target.closest(".rc-copy");
-    if(!btn) return;
-    const val = btn.dataset.copy;
-    navigator.clipboard?.writeText(val).then(() => {
-      const original = btn.innerHTML;
-      btn.innerHTML = checkIconSVG;
-      btn.style.color = "var(--accent-green)";
-      setTimeout(() => { btn.innerHTML = original; btn.style.color = ""; }, 1200);
-    }).catch(()=>{});
-  });
+  function wireCopyButtons(container){
+    container.addEventListener("click", (e) => {
+      const btn = e.target.closest(".rc-copy");
+      if(!btn) return;
+      const val = btn.dataset.copy;
+      navigator.clipboard?.writeText(val).then(() => {
+        const original = btn.innerHTML;
+        btn.innerHTML = checkIconSVG;
+        btn.style.color = "var(--accent-green)";
+        setTimeout(() => { btn.innerHTML = original; btn.style.color = ""; }, 1200);
+      }).catch(()=>{});
+    });
+  }
+  wireCopyButtons(resultGrid);
+  wireCopyButtons(resultGrid6);
 
   /* ---------- Cheat sheet modal ---------- */
   const COMMON_PREFIXES = new Set([8,16,20,22,24,25,26,27,28,29,30]);
@@ -993,6 +1407,10 @@
     splitValue.value = "";
     splitMode.value = "count";
     splitValueLabel.textContent = "Subnets Needed";
+
+    ip6Input.value = "";
+    cidr6Input.value = "";
+    compute6();
   });
 
   /* ---------- Split logic ---------- */
@@ -1056,6 +1474,7 @@
   });
 
   compute();
+  compute6();
 
   /* ---------- Background: network / packet-flow canvas ---------- */
   const canvas = document.getElementById("netCanvas");
